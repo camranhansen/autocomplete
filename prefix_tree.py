@@ -86,7 +86,9 @@ class SimplePrefixTree(Autocompleter):
         of the leaf weights in this tree.
     subtrees:
         A list of subtrees of this prefix tree.
-
+    #TODO do I need weight_type
+    weight_type
+        the type of weight of the tree (avg, sum)
     === Representation invariants ===
     - self.weight >= 0
 
@@ -116,6 +118,7 @@ class SimplePrefixTree(Autocompleter):
     value: Any
     weight: float
     subtrees: List[SimplePrefixTree]
+    weight_type: str
 
     def __init__(self, weight_type: str) -> None:
         """Initialize an empty simple prefix tree.
@@ -126,7 +129,11 @@ class SimplePrefixTree(Autocompleter):
         of non-leaf trees should be calculated (see the assignment handout
         for details).
         """
-        pass
+        self.weight = 0
+        self.weight_type = weight_type
+        self.subtrees = []
+        self.values = []
+
 
     def is_empty(self) -> bool:
         """Return whether this simple prefix tree is empty."""
