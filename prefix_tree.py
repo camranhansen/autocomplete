@@ -225,8 +225,42 @@ class SimplePrefixTree(Autocompleter):
         """
         self.subtrees.sort(key=lambda x: x.weight, reverse=True)
 
-    def autocomplete(self, prefix: List, limit: Optional[int] = None):
-        
+    def autocomplete(self, prefix: List,
+                     limit: Optional[int] = None) -> List[Tuple[Any, float]]:
+        """
+        Function composed of two helpers.
+        First helper checks if able to use all items in prefix.
+        If able to continue without hitting any dead ends,
+        Then helper 2 activates, giving leafs of the sub-tree.
+        If limit is None, return all terminal nodes.
+        Else, return values following greedy algorithm
+        Under the assumption of sorted list implying largest values
+        """
+
+        return self.auto_move(prefix, 0, limit)
+
+    def auto_move(self, prefix: List, pos: int, limit: Optional[int] = None) -> List[Tuple[Any, float]]:
+
+        if pos == len(prefix):
+            return self.getvalues(limit)
+            print("made it!")
+        else:
+            for subtree in self.subtrees:
+                if subtree.value == [prefix[0:pos]]:
+                    return subtree.auto_move(prefix, pos+1, limit)
+            print("other functionality works")
+            return []
+
+    def getvalues(self, limit: Optional[int] = None) -> List[Tuple[Any, float]]:
+        r = []
+        for subtree in self.subtrees:
+            if subtree.subtrees == []:
+                r.append((subtree.value, subtree.weight))
+            else:
+                r.append(subtree.getvalues)
+        return r
+
+
 
 
 ################################################################################
@@ -294,3 +328,4 @@ class CompressedPrefixTree(Autocompleter):
     t.insert('car', 3.0, ['c', 'a', 'r'])
     t.insert('dog', 4.0, ['d', 'o', 'g'])
     print(t)
+    print(t.autocomplete([]))
