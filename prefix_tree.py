@@ -236,17 +236,19 @@ class SimplePrefixTree(Autocompleter):
         Else, return values following greedy algorithm
         Under the assumption of sorted list implying largest values
         """
-
-        return self.auto_move(prefix, 0, limit)
+        if prefix == []:
+            return self.getvalues(limit)
+        else:
+            return self.auto_move(prefix, 1, limit)
 
     def auto_move(self, prefix: List, pos: int, limit: Optional[int] = None) -> List[Tuple[Any, float]]:
 
-        if pos == len(prefix):
+        if pos == len(prefix[0]):
             return self.getvalues(limit)
-            print("made it!")
         else:
             for subtree in self.subtrees:
-                if subtree.value == [prefix[0:pos]]:
+
+                if subtree.value == [prefix[0][0:pos]]:
                     return subtree.auto_move(prefix, pos+1, limit)
             print("other functionality works")
             return []
@@ -257,7 +259,7 @@ class SimplePrefixTree(Autocompleter):
             if subtree.subtrees == []:
                 r.append((subtree.value, subtree.weight))
             else:
-                r.append(subtree.getvalues)
+                r.append(subtree.getvalues(limit))
         return r
 
 
