@@ -86,8 +86,7 @@ class SimplePrefixTree(Autocompleter):
         of the leaf weights in this tree.
     subtrees:
         A list of subtrees of this prefix tree.
-    #TODO do I need weight_type
-    weight_type
+    weight_type:
         the type of weight of the tree (avg, sum)
     === Representation invariants ===
     - self.weight >= 0
@@ -132,8 +131,7 @@ class SimplePrefixTree(Autocompleter):
         self.weight = 0
         self.weight_type = weight_type
         self.subtrees = []
-        self.values = []
-
+        self.value = []
 
     def is_empty(self) -> bool:
         """Return whether this simple prefix tree is empty."""
@@ -162,6 +160,60 @@ class SimplePrefixTree(Autocompleter):
             for subtree in self.subtrees:
                 s += subtree._str_indented(depth + 1)
             return s
+
+    def __len__(self) -> int:
+        """Returns the number of unique leaves in the tree"""
+
+        if self.subtrees == [] and self.weight == 0 and self.value == []:
+            return 0
+        elif self.subtrees == [] and self.weight > 0:
+            return 1
+        else:
+            s = 0
+            for subtree in self.subtrees:
+                s += subtree.__len__()
+            return s
+
+    def insert(self, value: Any, weight: float, prefix: List) -> None:
+        """Insert value into the autocompleter.
+        See abstract class Autocompleter for representation invariants.
+        >>> t = SimplePrefixTree('sum')
+        >>> t.insert('cat', 2.0, ['c', 'a', 't'])
+        >>> t.insert('car', 3.0, ['c', 'a', 'r'])
+        >>> t.insert('dog', 4.0, ['d', 'o', 'g'])
+        >>> len(t)
+        3
+        """
+
+        if self.weight_type == "sum":
+            self.weight += weight
+        else:
+            self.weight = (self.weight * self.__len__() + weight)/(self.__len__() + 1)
+        if len(prefix) == 1:
+            # turn over a new leaf
+            # if we are at a point
+            # where prefix is one letter
+            new_leaf = SimplePrefixTree(self.weight_type)
+            new_leaf.value = value
+            new_leaf.weight = weight
+            self.subtrees.append(new_leaf)
+
+        else:
+            found = False
+            relevant_prefix = value[0:len(value) - len(prefix) + 1] 
+            # the first n characters of the value,
+            # where n is depth of tree
+            for subtree in self.subtrees:
+                if subtree.value == [relevant_prefix]:
+                    # if we find a match in the currently existing subtrees
+                    subtree.insert(value, weight, prefix[1:len(prefix)])
+                    found = True
+            if not found:
+                new_tree = SimplePrefixTree(self.weight_type)
+                new_tree.value = [relevant_prefix]
+                self.subtrees.append(new_tree)
+                new_tree.insert(value, weight, prefix[1:len(prefix)])
+
 
 
 ################################################################################
@@ -217,7 +269,10 @@ class CompressedPrefixTree(Autocompleter):
 
 
 if __name__ == '__main__':
-    import python_ta
-    python_ta.check_all(config={
-        'max-nested-blocks': 4
-    })
+    # import python_ta
+    # python_ta.check_all(config={
+    #     'max-nested-blocks': 4
+    # })
+    import doctest
+    doctest.testmod()
+    t = SimplePrefixTree('sum')
