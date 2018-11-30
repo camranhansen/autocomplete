@@ -187,8 +187,9 @@ class SimplePrefixTree(Autocompleter):
 
         if self.weight_type == "sum":
             self.weight += weight
-        else:
-            self.weight = (self.weight * self.__len__() + weight)/(self.__len__() + 1)
+        else:  # case if avg
+            self.weight = (self.weight * self.__len__() + weight)\
+                          /(self.__len__() + 1)
         if len(prefix) == 1:
             # turn over a new leaf
             # if we are at a point
@@ -197,6 +198,7 @@ class SimplePrefixTree(Autocompleter):
             new_leaf.value = value
             new_leaf.weight = weight
             self.subtrees.append(new_leaf)
+            self.handle_sorting()
 
         else:
             found = False
@@ -208,12 +210,23 @@ class SimplePrefixTree(Autocompleter):
                     # if we find a match in the currently existing subtrees
                     subtree.insert(value, weight, prefix[1:len(prefix)])
                     found = True
+                    self.handle_sorting()
             if not found:
                 new_tree = SimplePrefixTree(self.weight_type)
                 new_tree.value = [relevant_prefix]
                 self.subtrees.append(new_tree)
                 new_tree.insert(value, weight, prefix[1:len(prefix)])
+                self.handle_sorting()
 
+    def handle_sorting(self) -> None:
+        """
+        Mutating helper to sort subtrees by weight
+        in non-increasing weight order
+        """
+        self.subtrees.sort(key=lambda x: x.weight, reverse=True)
+
+    def autocomplete(self, prefix: List, limit: Optional[int] = None):
+        
 
 
 ################################################################################
@@ -268,11 +281,16 @@ class CompressedPrefixTree(Autocompleter):
     subtrees: List[CompressedPrefixTree]
 
 
-if __name__ == '__main__':
-    # import python_ta
-    # python_ta.check_all(config={
-    #     'max-nested-blocks': 4
-    # })
-    import doctest
-    doctest.testmod()
+# if __name__ == '__main__':
+#     import python_ta
+#     python_ta.check_all(config={
+#         'max-nested-blocks': 4
+#     })
+#     import doctest
+#     doctest.testmod()
     t = SimplePrefixTree('sum')
+    t = SimplePrefixTree('sum')
+    t.insert('cat', 2.0, ['c', 'a', 't'])
+    t.insert('car', 3.0, ['c', 'a', 'r'])
+    t.insert('dog', 4.0, ['d', 'o', 'g'])
+    print(t)
