@@ -24,7 +24,7 @@ from prefix_tree import SimplePrefixTree, CompressedPrefixTree
 ################################################################################
 # Text-based Autocomplete Engines (Task 4)
 ################################################################################
-class LetterAutocompleteEngine:
+class LetterAutocompleteEngine():
     """An autocomplete engine that suggests strings based on a few letters.
 
     The *prefix sequence* for a string is the list of characters in the string.
@@ -65,8 +65,11 @@ class LetterAutocompleteEngine:
         # We've opened the file for you here. You should iterate over the
         # lines of the file and process them according to the description in
         # this method's docstring.
-        with open(config['file'], encoding='utf8') as f:
-            pass
+
+        with open(config['file']) as csv_file:
+            reader = csv.reader(csv_file)
+            for line in reader:
+                print(type(line))
 
     def autocomplete(self, prefix: str,
                      limit: Optional[int] = None) -> List[Tuple[str, float]]:

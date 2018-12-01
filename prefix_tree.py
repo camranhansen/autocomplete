@@ -245,6 +245,7 @@ class SimplePrefixTree(Autocompleter):
 
         return sorted(r, key=lambda x: x[1], reverse=True)
 
+    # TODO figure out what the input is looking like eg. ["item"] or ["i","t" etc].
     def auto_move(self, prefix: List, pos: int, move_type: str,
                   limit: Optional[int] = None) -> List[Tuple[Any, float]]:
         """Helper function:
@@ -402,19 +403,20 @@ class CompressedPrefixTree(Autocompleter):
 # # t.remove(["ca"])
 # print(t)
 # print("removed everything")
-# print(t)
-t = SimplePrefixTree('sum')
-t.insert('cat', 2.0, ['c', 'a', 't'])
-t.insert('car', 3.0, ['c', 'a', 'r'])
-t.insert('dog', 4.0, ['d', 'o', 'g'])
-
-# Note that the returned tuples *must* be sorted in non-increasing weight
-# order. You can (and should) sort the tuples yourself inside
-# SimplePrefixTree.autocomplete.
-# print(t.autocomplete([]))
-assert t.autocomplete([]) == [('dog', 4.0), ('car', 3.0), ('cat', 2.0)]
-
-# But keep in mind that the greedy algorithm here does not necessarily
-# return the highest-weight values!! In this case, the ['c'] subtree
-# is recursed on first.
-assert t.autocomplete([], 1) == [('car', 3.0)]
+# # print(t)
+# t = SimplePrefixTree('sum')
+# t.insert('cat', 2.0, ['c', 'a', 't'])
+# t.insert('car', 3.0, ['c', 'a', 'r'])
+# t.insert('dog', 4.0, ['d', 'o', 'g'])
+#
+# # The trickiest part is that only *values* should be stored at leaves,
+# # so even if you remove a specific prefix, its parent might get removed
+# # from the tree as well!
+# t.remove(['c', 'a'])
+#
+# assert len(t) == 1
+# assert t.weight == 4.0
+#
+# # There is no more ['c'] subtree!
+# assert len(t.subtrees) == 1
+# assert t.subtrees[0].value == ['d']
