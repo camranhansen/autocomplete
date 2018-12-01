@@ -18,6 +18,7 @@ from __future__ import annotations
 from typing import Any, List, Optional, Tuple
 
 
+
 ################################################################################
 # The Autocompleter ADT
 ################################################################################
@@ -190,7 +191,7 @@ class SimplePrefixTree(Autocompleter):
         else:  # case if avg
             self.weight = (self.weight * self.__len__() + weight)\
                           /(self.__len__() + 1)
-        if len(prefix) == 1:
+        if len(prefix) == 0:
             # turn over a new leaf
             # if we are at a point
             # where prefix is one letter
@@ -239,30 +240,81 @@ class SimplePrefixTree(Autocompleter):
         if prefix == [""]:
             return self.getvalues(limit)
         else:
-            return self.auto_move(prefix, 1, limit)
+            return self.auto_move(prefix, 1, "complete", limit)
 
-    def auto_move(self, prefix: List, pos: int, limit: Optional[int] = None) -> List[Tuple[Any, float]]:
-        if len(prefix) == 1: # if the prefix is a single word (by characters)
-            if pos == len(prefix[0]) + 1:
+    def auto_move(self, prefix: List, pos: int, move_type: str, limit: Optional[int] = None) -> List[Tuple[Any, float]]:
+        """Helper function:
+        Move to location where prefix is fulfilled in subtree
+        Then call getvalues ro return a list of autocomplete values"""
+        if pos == len(prefix[0]) + 1:
+            if move_type == "complete":
                 return self.getvalues(limit)
-            else:
-                for subtree in self.subtrees:
-
-                    if subtree.value == [prefix[0][0:pos]]:
-                        return subtree.auto_move(prefix, pos+1, limit)
-                print("other functionality works")
+            elif move_type == "remove":
+                self.remove_helper()
                 return []
+            elif move_type == "rejig":
+                self.rejig_helper()
+        else:
+            for subtree in self.subtrees:
+                x = ["".join(prefix[0][0:pos])]
+                if subtree.value == x:
+                    return subtree.auto_move(prefix, pos+1, move_type, limit)
+
+            return []
 
     def getvalues(self, limit: Optional[int] = None) -> List[Tuple[Any, float]]:
+        """Get values < limit if it exists, else get everything"""
         r = []
+        if not limit:
+            for subtree in self.subtrees:
+                if not subtree.subtrees:
+                    r.append((subtree.value, subtree.weight))
+                else:
+                    r.append(subtree.getvalues(limit))
+            return r
+        else:
+            for subtree in self.subtrees:
+                if len(r) >= limit:
+                    return r
+                if not subtree.subtrees:
+                    r.append((subtree.value, subtree.weight))
+                else:
+                    r.append(subtree.getvalues(limit))
+            return r
+
+    def remove(self, prefix: List) -> None:
+        if prefix == [""]: # remove everything
+            self.subtrees = []
+            self.weight = 0
+        else:
+            self.auto_move(prefix, 1, "remove")
+            for i in range(len(prefix[0])):
+                self.rejig([prefix[0][0:(len(prefix[0])-i)]])
+            self.rejig([""])
+
+    def remove_helper(self) -> None:
+        if isinstance(self.value, list):
+            self.subtrees = []
+            self.weight = 0
+        else:
+            self.value = []
+            self.weight = 0
+
+    def rejig(self, prefix: List) -> None:
+        self.auto_move(prefix, 1, "rejig")
+
+    def rejig_helper(self):
+        for i in range(len(self.subtrees)):
+            if self.subtrees[i].subtrees is None:
+                self.subtrees.pop(i)
+        s = []
         for subtree in self.subtrees:
-            if subtree.subtrees == []:
-                r.append((subtree.value, subtree.weight))
-            else:
-                r.append(subtree.getvalues(limit))
-        return r
+            s.append(subtree.weight)
 
-
+        if self.weight_type == "sum":
+            self.weight = sum(s)
+        else:
+            self.weight = sum(s)/len(s)
 
 
 ################################################################################
@@ -318,16 +370,21 @@ class CompressedPrefixTree(Autocompleter):
 
 
 # if __name__ == '__main__':
-#     import python_ta
-#     python_ta.check_all(config={
-#         'max-nested-blocks': 4
-#     })
+    import python_ta
+    python_ta.check_all(config={
+        'max-nested-blocks': 4
+    })
 #     import doctest
 #     doctest.testmod()
-    t = SimplePrefixTree('sum')
+
     t = SimplePrefixTree('sum')
     t.insert('cat', 2.0, ['c', 'a', 't'])
     t.insert('car', 3.0, ['c', 'a', 'r'])
-    t.insert('dog', 4.0, ['d', 'o', 'g'])
+    t.insert('dog', 7.0, ['d', 'o', 'g'])
+    t.insert('ca', 4.0, ['c', 'a'])
     print(t)
-    print(t.autocomplete([""]))
+    # print(t.autocomplete([""], 4))
+    t.remove(["ca"])
+    print(t)
+    # print("removed everything")
+    # print(t)
