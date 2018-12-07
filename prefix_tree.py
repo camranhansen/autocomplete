@@ -220,14 +220,13 @@ class SimplePrefixTree(Autocompleter):
             for subtree in self.subtrees:
                 if subtree.value == value:
                     subtree.weight += weight
-                    found = True
                     return True
             if not found:
                 new_leaf = SimplePrefixTree(self.weight_type)
                 new_leaf.value = value
                 new_leaf.weight = weight
                 self.subtrees.append(new_leaf)
-                return True
+                return False
 
         else:
             found = False
@@ -277,17 +276,8 @@ class SimplePrefixTree(Autocompleter):
         if pos == len(prefix) + 1:
             if move_type == "complete":
                 return self.getvalues(limit)
-            elif move_type == "remove":
-                self.remove_helper()
-                return []
-            elif move_type == "rejig":
-                self.rejig_helper()
-                return []
-            else:
-                return []
         else:
             for subtree in self.subtrees:
-                # x = "".join(prefix[0:pos])]
                 if subtree.value == prefix[0:pos]:
                     return subtree.auto_move(prefix, pos+1, move_type, limit)
             return []
@@ -325,50 +315,57 @@ class SimplePrefixTree(Autocompleter):
             self.subtrees = []
             self.weight = 0
         else:
-            self.auto_move(prefix, 1, "remove")
-            for i in range(len(prefix)):
-                self.auto_move(prefix[0:(len(prefix)-i)], 1, "rejig")
-            self.rejig_helper()
+            self.remove_helper(prefix, 1)
+            self.n_helper(prefix)
+            self.weight_helper(prefix)
 
-    def remove_helper(self) -> None:
-        """Helper to setup removing values
-        Once we get to the node we want with
-        Auto_move"""
-        self.value = []
-        self.subtrees = []
-        self.weight = 0
-
-    def rejig_helper(self) -> None:
-        """
-        Rejig the tree so that it
-        Takes into account the new, removed node.
-        """
-        d = False
-        toremove = []
-        for i in range(len(self.subtrees)):
-            # x = self.subtrees[i]
-            # y = self.subtrees[i].value == []
-            if self.subtrees[i].value == []:
-                toremove.append(i)
-                d = True
-
-        for ind in toremove:
-            self.subtrees.pop(ind)
-
-        if d is True:
-            if self.subtrees == []:
-                self.value = []
-                self.weight = 0
-
-        s = []
-        for subtree in self.subtrees:
-            s.append(subtree.weight)
-
-        if self.weight_type == "sum":
-            self.weight = sum(s)
+    def remove_helper(self, prefix, pos) -> None:
+        if pos == len(prefix) + 1:
+            self.subtrees = []
+            self.weight = 0
+            self.value = []
         else:
-            self.weight = sum(s)/len(s)
+            for i in range(len(self.subtrees)):
+                if self.subtrees[i].value == prefix[0:pos]:
+                    self.subtrees[i].remove_helper(prefix, pos+1)
+            self.handle_sorting()
+
+    def n_helper(self, prefix):
+        for subtree in self.subtrees:
+            if subtree.__len__() == 0:
+                self.subtrees.remove(subtree)
+            elif subtree.value == prefix[0:len(self.value)+1]:
+                subtree.n_helper(prefix)
+
+    def weight_helper(self, prefix) -> None:
+        self.weight = 0
+        if self.weight_type == "sum":
+            for subtree in self.subtrees:
+                if subtree.value != prefix[0:len(self.value) + 1]:
+                    self.weight += subtree.weight
+                else:
+                    subtree.weight_helper(prefix)
+                    self.weight += subtree.weight
+
+        else:
+            n = 0
+            w = 0
+            for subtree in self.subtrees:
+                if subtree.value != prefix[0:len(self.value) + 1]:
+                    w += subtree.weight*subtree.__len__()
+                    n += subtree.__len__()
+
+                else:
+                    subtree.weight_helper(prefix)
+                    w += subtree.weight*subtree.__len__()
+                    n += subtree.__len__()
+            self.weight += w/n
         self.handle_sorting()
+
+
+
+
+
 
 
 ################################################################################
@@ -423,10 +420,10 @@ class CompressedPrefixTree(Autocompleter):
     subtrees: List[CompressedPrefixTree]
 
 
-if __name__ == '__main__':
-    import python_ta
-    python_ta.check_all(config={
-        'max-nested-blocks': 4
-    })
-    import doctest
-    doctest.testmod()
+# if __name__ == '__main__':
+#     import python_ta
+#     python_ta.check_all(config={
+#         'max-nested-blocks': 4
+#     })
+#     import doctest
+#     doctest.testmod()

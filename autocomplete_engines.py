@@ -74,8 +74,8 @@ class LetterAutocompleteEngine():
                 n = line.rstrip('\n')
                 new_string = ""
                 for char in n:
-                    if char.isalpha():
-                        new_string += char
+                    if char.isalpha() or char == " " or char.isdigit():
+                        new_string += char.lower()
                 if len(new_string) > 0:
                     self.autocompleter.insert(new_string, 1.0, list(new_string))
         # self.autocompleter.insert('cat', 2.0, ['c', 'a', 't'])
@@ -159,7 +159,29 @@ class SentenceAutocompleteEngine:
         """
         # We haven't given you any starter code here! You should review how
         # you processed CSV files on Assignment 1.
-        pass
+
+        if config['autocompleter'] == "simple":
+            self.autocompleter = SimplePrefixTree(config["weight_type"])
+
+        with open(config['file']) as csv_file:
+            reader = csv.reader(csv_file)
+            for line in reader:
+                n = line[0]
+                new_token = [""]
+                marker = 0
+                value = ""
+                weight = float(line[1])
+                for char in n:
+                    if char.isalpha() or char.isdigit():
+                            new_token[marker] += char.lower()
+                            value += char.lower()
+                    elif char == " ":
+                        marker += 1
+                        new_token.append("")
+                        value += " "
+                if len(new_token) > 0:
+                    self.autocompleter.insert(value, weight, new_token)
+
 
     def autocomplete(self, prefix: str,
                      limit: Optional[int] = None) -> List[Tuple[str, float]]:
@@ -177,7 +199,10 @@ class SentenceAutocompleteEngine:
             limit is None or limit > 0
             <prefix> contains only lowercase alphanumeric characters and spaces
         """
-        pass
+        if prefix == '':
+            return self.autocompleter.autocomplete([], limit)
+        sanitized = prefix.split(" ")
+        return self.autocompleter.autocomplete(sanitized, limit)
 
     def remove(self, prefix: str) -> None:
         """Remove all strings that match the given prefix.
@@ -188,8 +213,10 @@ class SentenceAutocompleteEngine:
         Precondition: <prefix> contains only lowercase alphanumeric characters
                       and spaces.
         """
-        pass
-
+        if prefix == '':
+            self.autocompleter.remove([])
+        sanitized = prefix.split(" ")
+        self.autocompleter.remove(sanitized)
 
 
 ################################################################################
@@ -235,7 +262,19 @@ class MelodyAutocompleteEngine:
         """
         # We haven't given you any starter code here! You should review how
         # you processed CSV files on Assignment 1.
-        pass
+        if config['autocompleter'] == "simple":
+            self.autocompleter = SimplePrefixTree(config["weight_type"])
+
+        with open(config['file']) as csv_file:
+            reader = csv.reader(csv_file)
+
+            for line in reader:
+                name = line[0]
+                tuple_list = []
+                for i in range(1, len(line), 2):
+                    tuple_list.append(())
+
+
 
     def autocomplete(self, prefix: List[int],
                      limit: Optional[int] = None) -> List[Tuple[Melody, float]]:
@@ -264,11 +303,13 @@ def sample_letter_autocomplete() -> List[Tuple[str, float]]:
     """A sample run of the letter autocomplete engine."""
     engine = LetterAutocompleteEngine({
         # NOTE: you should also try 'data/google_no_swears.txt' for the file.
-        'file': 'data/lotr.txt',
+        # 'file': 'data/google_no_swears.txt',
+        'file': 'test.txt',
         'autocompleter': 'simple',
         'weight_type': 'sum'
     })
-    return engine.autocomplete('frodo d', 20)
+    engine.remove("how")
+    return engine.autocomplete('', 20)
 
 
 def sample_sentence_autocomplete() -> List[Tuple[str, float]]:
@@ -278,7 +319,8 @@ def sample_sentence_autocomplete() -> List[Tuple[str, float]]:
         'autocompleter': 'simple',
         'weight_type': 'sum'
     })
-    return engine.autocomplete('how to', 20)
+    # engine.remove('what')
+    return engine.autocomplete("how to", 20)
 
 
 def sample_melody_autocomplete() -> None:
@@ -288,9 +330,10 @@ def sample_melody_autocomplete() -> None:
         'autocompleter': 'simple',
         'weight_type': 'sum'
     })
-    melodies = engine.autocomplete([2, 2], 20)
-    for melody, _ in melodies:
-        melody.play()
+
+    # melodies = engine.autocomplete([2, 2], 20)
+    # for melody, _ in melodies:
+    #     melody.play()
 
 
 if __name__ == '__main__':
@@ -306,12 +349,7 @@ if __name__ == '__main__':
     import os
 
     sys.setrecursionlimit(5000)
-    # engine = LetterAutocompleteEngine({
-    #     'file': 'test.txt',
-    #     'autocompleter': 'simple',
-    #     'weight_type': 'sum'
-    # })
-    # print(engine.autocomplete("c"))
-    print(sample_letter_autocomplete())
+
+    # print(sample_letter_autocomplete())
     # print(sample_sentence_autocomplete())
-    # sample_melody_autocomplete()
+    sample_melody_autocomplete()
