@@ -186,19 +186,30 @@ class SimplePrefixTree(Autocompleter):
         >>> len(t)
         3
         """
-        print(self.insert_helper(value, weight, prefix))
+        dup = self.insert_helper(value, weight, prefix)
+        self.update_weights(prefix, weight, dup)
+
         # for i in range(len(prefix)):
         #     self.auto_move(prefix[0:(len(prefix) - i)], 1, "rejig")
         # self.rejig_helper()
         # self.update_weights(prefix)
 
-    # def update_weights(self, prefix) -> float:
-    #     if self.subtrees == []:
-    #         return self.weight
-    #     else:
-    #         if self.weight_type == "sum":
-
-    # def get_weight(self, prefix) -> float:
+    def update_weights(self, prefix: List, weight: float, dup: bool):
+        if self.weight_type == "sum":
+            self.weight += weight
+        else:
+            if dup is True:
+                self.weight = ((self.weight*self.__len__()) + weight)/self.__len__()
+            else:
+                if self.weight == 0:
+                    self.weight = weight/self.__len__()
+                else:
+                    self.weight = ((self.weight*(self.__len__()-1)) + weight)/(self.__len__())
+        for subtree in self.subtrees:
+            relevant = prefix[0:len(self.value)+1]
+            if subtree.value == relevant:
+                subtree.update_weights(prefix, weight, dup)
+                self.handle_sorting()
 
     def insert_helper(self, value: Any, weight: float, prefix: List) -> bool:
         """
@@ -411,33 +422,11 @@ class CompressedPrefixTree(Autocompleter):
     weight: float
     subtrees: List[CompressedPrefixTree]
 
-t = SimplePrefixTree('sum')
-t.insert('cat', 2.0, ['c', 'a', 't'])
-t.insert('cat', 2.0, ['c', 'a', 't'])
-t.insert('car', 3.0, ['c', 'a', 'r'])
-t.insert('dog', 4.0, ['d', 'o', 'g'])
 
-# t has 3 values (note that __len__ only counts the inserted values,
-# which are stored at the *leaves* of the tree).
-# assert len(t) == 3
-#
-# # # This tree is using the 'sum' aggregate weight option.
-# # assert t.weight == 2.0 + 3.0 + 4.0
-# #
-# # # t has two subtrees, and order matters (because of weights).
-# # assert len(t.subtrees) == 2
-# # left = t.subtrees[0]
-# # right = t.subtrees[1]
-# #
-# # assert left.value == ['c']
-# # assert left.weight == 5.0
-# #
-# # assert right.value == ['d']
-# # assert right.weight == 4.0
-# # # if __name__ == '__main__':
-#     import python_ta
-#     python_ta.check_all(config={
-#         'max-nested-blocks': 4
-#     })
-# #     import doctest
-#     doctest.testmod()
+if __name__ == '__main__':
+    import python_ta
+    python_ta.check_all(config={
+        'max-nested-blocks': 4
+    })
+    import doctest
+    doctest.testmod()
