@@ -269,11 +269,19 @@ class MelodyAutocompleteEngine:
             reader = csv.reader(csv_file)
 
             for line in reader:
+
                 name = line[0]
                 tuple_list = []
                 for i in range(1, len(line), 2):
-                    tuple_list.append(())
+                    if line[i] == "" or line[i+1] == "":
+                        break
+                    tuple_list.append((int(line[i]), int(line[i+1])))
 
+                m = Melody(name, tuple_list)
+                interval_sequence = []
+                for i in range(len(tuple_list)-1):
+                    interval_sequence.append((tuple_list[i+1][0] - tuple_list[i][0]))
+                self.autocompleter.insert(m, 1, interval_sequence)
 
 
     def autocomplete(self, prefix: List[int],
@@ -288,13 +296,13 @@ class MelodyAutocompleteEngine:
         Precondition:
             limit is None or limit > 0
         """
-        pass
+        return self.autocompleter.autocomplete(prefix, limit)
+
 
     def remove(self, prefix: List[int]) -> None:
         """Remove all melodies that match the given interval sequence.
         """
-        pass
-
+        self.autocompleter.remove(prefix)
 
 ###############################################################################
 # Sample runs
@@ -315,7 +323,8 @@ def sample_letter_autocomplete() -> List[Tuple[str, float]]:
 def sample_sentence_autocomplete() -> List[Tuple[str, float]]:
     """A sample run of the sentence autocomplete engine."""
     engine = SentenceAutocompleteEngine({
-        'file': 'data/google_searches.csv',
+        # 'file': 'data/random_melodies_c_scale.csv',
+        'file': 'data/songbook.csv',
         'autocompleter': 'simple',
         'weight_type': 'sum'
     })
@@ -326,14 +335,15 @@ def sample_sentence_autocomplete() -> List[Tuple[str, float]]:
 def sample_melody_autocomplete() -> None:
     """A sample run of the melody autocomplete engine."""
     engine = MelodyAutocompleteEngine({
-        'file': 'data/random_melodies_c_scale.csv',
+        # 'file': 'data/random_melodies_c_scale.csv',
+        'file': 'data/songbook.csv',
         'autocompleter': 'simple',
         'weight_type': 'sum'
     })
-
-    # melodies = engine.autocomplete([2, 2], 20)
-    # for melody, _ in melodies:
-    #     melody.play()
+    engine.remove([])
+    melodies = engine.autocomplete([])
+    for melody, _ in melodies:
+        melody.play()
 
 
 if __name__ == '__main__':
