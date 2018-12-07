@@ -65,11 +65,17 @@ class LetterAutocompleteEngine():
         # We've opened the file for you here. You should iterate over the
         # lines of the file and process them according to the description in
         # this method's docstring.
-
-        with open(config['file']) as csv_file:
-            reader = csv.reader(csv_file)
-            for line in reader:
-                print(type(line))
+        if config['autocompleter'] == "simple":
+            self.autocompleter = SimplePrefixTree(config["weight_type"])
+        # else:
+        #     self.autocompleter = CompressedPrefixTree(config["weight_type"])
+        with open(config['file'], encoding='utf8') as f:
+            for line in f:
+                print(line)
+        self.autocompleter.insert('cat', 2.0, ['c', 'a', 't'])
+        self.autocompleter.insert('car', 3.0, ['c', 'a', 'r'])
+        self.autocompleter.insert('dog', 7.0, ['d', 'o', 'g'])
+        print(self.autocompleter)
 
     def autocomplete(self, prefix: str,
                      limit: Optional[int] = None) -> List[Tuple[str, float]]:
@@ -291,7 +297,16 @@ if __name__ == '__main__':
     # This is used to increase the recursion limit so that your sample runs
     # work even for fairly tall simple prefix trees.
     import sys
+    import os
+
+    cwd = os.getcwd()
+    print(cwd)
     sys.setrecursionlimit(5000)
+    engine = LetterAutocompleteEngine({
+        'file': 'test.txt',
+        'autocompleter': 'simple',
+        'weight_type': 'sum'
+    })
 
     # print(sample_letter_autocomplete())
     # print(sample_sentence_autocomplete())

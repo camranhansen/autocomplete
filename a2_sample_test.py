@@ -145,7 +145,7 @@ def test_simple_prefix_tree_structure() -> None:
 #     order. This is a good thing to try out.
 #     """
 #     t = CompressedPrefixTree('sum')
-#     t.insert('cat', 2.0, ['c', 'a', 't'])
+#   t.insert('cat', 2.0, ['c', 'a', 't'])
 #     t.insert('car', 3.0, ['c', 'a', 'r'])
 #     t.insert('dog', 4.0, ['d', 'o', 'g'])
 #

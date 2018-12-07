@@ -176,7 +176,8 @@ class SimplePrefixTree(Autocompleter):
             return s
 
     def insert(self, value: Any, weight: float, prefix: List) -> None:
-        """Insert value into the autocompleter.
+        """Insert value into the autocompleter using helper,
+        Then figure out weights/sorting
         See abstract class Autocompleter for representation invariants.
         >>> t = SimplePrefixTree('sum')
         >>> t.insert('cat', 2.0, ['c', 'a', 't'])
@@ -185,39 +186,41 @@ class SimplePrefixTree(Autocompleter):
         >>> len(t)
         3
         """
+        self.insert_helper(value, weight, prefix)
+        for i in range(len(prefix)):
+            self.auto_move(prefix[0:(len(prefix) - i)], 1, "rejig")
+        self.rejig_helper()
 
-        if self.weight_type == "sum":
-            self.weight += weight
-        else:  # case if avg
-            self.weight = (self.weight * self.__len__() + weight)\
-                          /(self.__len__() + 1)
-        if len(prefix) == 0:
-            # turn over a new leaf
-            # if we are at a point
-            # where prefix is one letter
-            new_leaf = SimplePrefixTree(self.weight_type)
-            new_leaf.value = value
-            new_leaf.weight = weight
-            self.subtrees.append(new_leaf)
-            self.handle_sorting()
+    def insert_helper(self, value: Any, weight: float, prefix: List) -> None:
+        """
+        Insert value into autocompleter.
+        """
+        if len(prefix) == len(self.value):
+            found = False
+            for subtree in self.subtrees:
+                if subtree.value == value:
+                    subtree.weight += weight
+                    found = True
+            if not found:
+                new_leaf = SimplePrefixTree(self.weight_type)
+                new_leaf.value = value
+                new_leaf.weight = weight
+                self.subtrees.append(new_leaf)
 
         else:
             found = False
-            relevant_prefix = value[0:len(value) - len(prefix) + 1] 
-            # the first n characters of the value,
-            # where n is depth of tree
+            relevant = prefix[0:len(self.value) + 1]
             for subtree in self.subtrees:
-                if subtree.value == [relevant_prefix]:
-                    # if we find a match in the currently existing subtrees
-                    subtree.insert(value, weight, prefix[1:len(prefix)])
+                if subtree.value == relevant:
+                    subtree.insert_helper(value, weight, prefix)
                     found = True
-                    self.handle_sorting()
+
             if not found:
                 new_tree = SimplePrefixTree(self.weight_type)
-                new_tree.value = [relevant_prefix]
+                new_tree.value = relevant
+                new_tree.weight = weight
                 self.subtrees.append(new_tree)
-                new_tree.insert(value, weight, prefix[1:len(prefix)])
-                self.handle_sorting()
+                new_tree.insert_helper(value, weight, prefix)
 
     def handle_sorting(self) -> None:
         """
@@ -237,7 +240,7 @@ class SimplePrefixTree(Autocompleter):
         Else, return values following greedy algorithm
         Under the assumption of sorted list implying largest values
         """
-        r = []
+
         if not prefix:
             r = self.getvalues(limit)
         else:
@@ -245,13 +248,12 @@ class SimplePrefixTree(Autocompleter):
 
         return sorted(r, key=lambda x: x[1], reverse=True)
 
-    # TODO figure out what the input is looking like eg. ["item"] or ["i","t" etc].
     def auto_move(self, prefix: List, pos: int, move_type: str,
                   limit: Optional[int] = None) -> List[Tuple[Any, float]]:
         """Helper function:
         Move to location where prefix is fulfilled in subtree
         Then call getvalues ro return a list of autocomplete values"""
-        if pos == len(prefix[0]) + 1:
+        if pos == len(prefix) + 1:
             if move_type == "complete":
                 return self.getvalues(limit)
             elif move_type == "remove":
@@ -264,8 +266,8 @@ class SimplePrefixTree(Autocompleter):
                 return []
         else:
             for subtree in self.subtrees:
-                x = ["".join(prefix[0][0:pos])]
-                if subtree.value == x:
+                # x = "".join(prefix[0:pos])]
+                if subtree.value == prefix[0:pos]:
                     return subtree.auto_move(prefix, pos+1, move_type, limit)
             return []
 
@@ -300,29 +302,40 @@ class SimplePrefixTree(Autocompleter):
             self.weight = 0
         else:
             self.auto_move(prefix, 1, "remove")
-            for i in range(len(prefix[0])):
-                self.auto_move([prefix[0][0:(len(prefix[0])-i)]], 1, "rejig")
-            self.auto_move([""], 1, "rejig")
+            for i in range(len(prefix)):
+                self.auto_move(prefix[0:(len(prefix)-i)], 1, "rejig")
+            self.rejig_helper()
 
     def remove_helper(self) -> None:
         """Helper to setup removing values
         Once we get to the node we want with
         Auto_move"""
-        if isinstance(self.value, list):
-            self.subtrees = []
-            self.weight = 0
-        else:
-            self.value = []
-            self.weight = 0
+        self.value = []
+        self.subtrees = []
+        self.weight = 0
 
     def rejig_helper(self) -> None:
         """
         Rejig the tree so that it
         Takes into account the new, removed node.
         """
+        d = False
+        toremove = []
         for i in range(len(self.subtrees)):
-            if self.subtrees[i].subtrees is None:
-                self.subtrees.pop(i)
+            # x = self.subtrees[i]
+            # y = self.subtrees[i].value == []
+            if self.subtrees[i].value == []:
+                toremove.append(i)
+                d = True
+
+        for ind in toremove:
+            self.subtrees.pop(ind)
+
+        if d is True:
+            if self.subtrees == []:
+                self.value = []
+                self.weight = 0
+
         s = []
         for subtree in self.subtrees:
             s.append(subtree.weight)
@@ -331,6 +344,7 @@ class SimplePrefixTree(Autocompleter):
             self.weight = sum(s)
         else:
             self.weight = sum(s)/len(s)
+        self.handle_sorting()
 
 
 ################################################################################
@@ -392,31 +406,3 @@ class CompressedPrefixTree(Autocompleter):
 #     })
 # #     import doctest
 #     doctest.testmod()
-
-# t = SimplePrefixTree('avg')
-# t.insert('cat', 2.0, ['c', 'a', 't'])
-# t.insert('car', 3.0, ['c', 'a', 'r'])
-# t.insert('dog', 7.0, ['d', 'o', 'g'])
-# t.insert('ca', 4.0, ['c', 'a'])
-# print(t)
-# print(t.autocomplete([]))
-# # t.remove(["ca"])
-# print(t)
-# print("removed everything")
-# # print(t)
-# t = SimplePrefixTree('sum')
-# t.insert('cat', 2.0, ['c', 'a', 't'])
-# t.insert('car', 3.0, ['c', 'a', 'r'])
-# t.insert('dog', 4.0, ['d', 'o', 'g'])
-#
-# # The trickiest part is that only *values* should be stored at leaves,
-# # so even if you remove a specific prefix, its parent might get removed
-# # from the tree as well!
-# t.remove(['c', 'a'])
-#
-# assert len(t) == 1
-# assert t.weight == 4.0
-#
-# # There is no more ['c'] subtree!
-# assert len(t.subtrees) == 1
-# assert t.subtrees[0].value == ['d']
