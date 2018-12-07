@@ -186,12 +186,21 @@ class SimplePrefixTree(Autocompleter):
         >>> len(t)
         3
         """
-        self.insert_helper(value, weight, prefix)
-        for i in range(len(prefix)):
-            self.auto_move(prefix[0:(len(prefix) - i)], 1, "rejig")
-        self.rejig_helper()
+        print(self.insert_helper(value, weight, prefix))
+        # for i in range(len(prefix)):
+        #     self.auto_move(prefix[0:(len(prefix) - i)], 1, "rejig")
+        # self.rejig_helper()
+        # self.update_weights(prefix)
 
-    def insert_helper(self, value: Any, weight: float, prefix: List) -> None:
+    # def update_weights(self, prefix) -> float:
+    #     if self.subtrees == []:
+    #         return self.weight
+    #     else:
+    #         if self.weight_type == "sum":
+
+    # def get_weight(self, prefix) -> float:
+
+    def insert_helper(self, value: Any, weight: float, prefix: List) -> bool:
         """
         Insert value into autocompleter.
         """
@@ -201,26 +210,28 @@ class SimplePrefixTree(Autocompleter):
                 if subtree.value == value:
                     subtree.weight += weight
                     found = True
+                    return True
             if not found:
                 new_leaf = SimplePrefixTree(self.weight_type)
                 new_leaf.value = value
                 new_leaf.weight = weight
                 self.subtrees.append(new_leaf)
+                return True
 
         else:
             found = False
             relevant = prefix[0:len(self.value) + 1]
             for subtree in self.subtrees:
                 if subtree.value == relevant:
-                    subtree.insert_helper(value, weight, prefix)
-                    found = True
+
+                    return subtree.insert_helper(value, weight, prefix)
 
             if not found:
                 new_tree = SimplePrefixTree(self.weight_type)
                 new_tree.value = relevant
-                new_tree.weight = weight
                 self.subtrees.append(new_tree)
                 new_tree.insert_helper(value, weight, prefix)
+            return False
 
     def handle_sorting(self) -> None:
         """
@@ -245,7 +256,6 @@ class SimplePrefixTree(Autocompleter):
             r = self.getvalues(limit)
         else:
             r = self.auto_move(prefix, 1, "complete", limit)
-
         return sorted(r, key=lambda x: x[1], reverse=True)
 
     def auto_move(self, prefix: List, pos: int, move_type: str,
@@ -282,13 +292,16 @@ class SimplePrefixTree(Autocompleter):
                     r += (subtree.getvalues(limit))
             return r
         else:
+            if limit == 0: # TODO does this work?
+                return []
             for subtree in self.subtrees:
                 if len(r) >= limit:
                     return r
                 if not subtree.subtrees:
                     r.append((subtree.value, subtree.weight))
                 else:
-                    r += subtree.getvalues(limit)
+                    r += subtree.getvalues(limit - len(r))
+
             return r
 
     def remove(self, prefix: List) -> None:
@@ -398,8 +411,30 @@ class CompressedPrefixTree(Autocompleter):
     weight: float
     subtrees: List[CompressedPrefixTree]
 
+t = SimplePrefixTree('sum')
+t.insert('cat', 2.0, ['c', 'a', 't'])
+t.insert('cat', 2.0, ['c', 'a', 't'])
+t.insert('car', 3.0, ['c', 'a', 'r'])
+t.insert('dog', 4.0, ['d', 'o', 'g'])
 
-# if __name__ == '__main__':
+# t has 3 values (note that __len__ only counts the inserted values,
+# which are stored at the *leaves* of the tree).
+# assert len(t) == 3
+#
+# # # This tree is using the 'sum' aggregate weight option.
+# # assert t.weight == 2.0 + 3.0 + 4.0
+# #
+# # # t has two subtrees, and order matters (because of weights).
+# # assert len(t.subtrees) == 2
+# # left = t.subtrees[0]
+# # right = t.subtrees[1]
+# #
+# # assert left.value == ['c']
+# # assert left.weight == 5.0
+# #
+# # assert right.value == ['d']
+# # assert right.weight == 4.0
+# # # if __name__ == '__main__':
 #     import python_ta
 #     python_ta.check_all(config={
 #         'max-nested-blocks': 4

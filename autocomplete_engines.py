@@ -71,11 +71,17 @@ class LetterAutocompleteEngine():
         #     self.autocompleter = CompressedPrefixTree(config["weight_type"])
         with open(config['file'], encoding='utf8') as f:
             for line in f:
-                print(line)
-        self.autocompleter.insert('cat', 2.0, ['c', 'a', 't'])
-        self.autocompleter.insert('car', 3.0, ['c', 'a', 'r'])
-        self.autocompleter.insert('dog', 7.0, ['d', 'o', 'g'])
-        print(self.autocompleter)
+                n = line.rstrip('\n')
+                new_string = ""
+                for char in n:
+                    if char.isalpha():
+                        new_string += char
+                if len(new_string) > 0:
+                    self.autocompleter.insert(new_string, 1.0, list(new_string))
+        # self.autocompleter.insert('cat', 2.0, ['c', 'a', 't'])
+        # self.autocompleter.insert('car', 3.0, ['c', 'a', 'r'])
+        # self.autocompleter.insert('dog', 7.0, ['d', 'o', 'g'])
+        # print(self.autocompleter)
 
     def autocomplete(self, prefix: str,
                      limit: Optional[int] = None) -> List[Tuple[str, float]]:
@@ -93,7 +99,7 @@ class LetterAutocompleteEngine():
             limit is None or limit > 0
             <prefix> contains only lowercase alphanumeric characters and spaces
         """
-        pass
+        return self.autocompleter.autocomplete(list(prefix), limit)
 
     def remove(self, prefix: str) -> None:
         """Remove all strings that match the given prefix string.
@@ -104,7 +110,7 @@ class LetterAutocompleteEngine():
         Precondition: <prefix> contains only lowercase alphanumeric characters
                       and spaces.
         """
-        pass
+        return self.autocompleter.remove(list(prefix))
 
 
 class SentenceAutocompleteEngine:
@@ -299,15 +305,13 @@ if __name__ == '__main__':
     import sys
     import os
 
-    cwd = os.getcwd()
-    print(cwd)
     sys.setrecursionlimit(5000)
-    engine = LetterAutocompleteEngine({
-        'file': 'test.txt',
-        'autocompleter': 'simple',
-        'weight_type': 'sum'
-    })
-
-    # print(sample_letter_autocomplete())
+    # engine = LetterAutocompleteEngine({
+    #     'file': 'test.txt',
+    #     'autocompleter': 'simple',
+    #     'weight_type': 'sum'
+    # })
+    # print(engine.autocomplete("c"))
+    print(sample_letter_autocomplete())
     # print(sample_sentence_autocomplete())
     # sample_melody_autocomplete()
