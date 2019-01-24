@@ -67,8 +67,9 @@ class LetterAutocompleteEngine():
         # this method's docstring.
         if config['autocompleter'] == "simple":
             self.autocompleter = SimplePrefixTree(config["weight_type"])
-        # else:
-        #     self.autocompleter = CompressedPrefixTree(config["weight_type"])
+        else:
+            self.autocompleter = CompressedPrefixTree(config["weight_type"])
+
         with open(config['file'], encoding='utf8') as f:
             for line in f:
                 n = line.rstrip('\n')
@@ -162,6 +163,8 @@ class SentenceAutocompleteEngine:
 
         if config['autocompleter'] == "simple":
             self.autocompleter = SimplePrefixTree(config["weight_type"])
+        else:
+            self.autocompleter = CompressedPrefixTree(config["weight_type"])
 
         with open(config['file']) as csv_file:
             reader = csv.reader(csv_file)
@@ -173,8 +176,8 @@ class SentenceAutocompleteEngine:
                 weight = float(line[1])
                 for char in n:
                     if char.isalpha() or char.isdigit():
-                            new_token[marker] += char.lower()
-                            value += char.lower()
+                        new_token[marker] += char.lower()
+                        value += char.lower()
                     elif char == " ":
                         marker += 1
                         new_token.append("")
@@ -264,6 +267,8 @@ class MelodyAutocompleteEngine:
         # you processed CSV files on Assignment 1.
         if config['autocompleter'] == "simple":
             self.autocompleter = SimplePrefixTree(config["weight_type"])
+        else:
+            self.autocompleter = CompressedPrefixTree(config["weight_type"])
 
         with open(config['file']) as csv_file:
             reader = csv.reader(csv_file)
@@ -280,7 +285,8 @@ class MelodyAutocompleteEngine:
                 m = Melody(name, tuple_list)
                 interval_sequence = []
                 for i in range(len(tuple_list)-1):
-                    interval_sequence.append((tuple_list[i+1][0] - tuple_list[i][0]))
+                    interval_sequence.append(
+                        (tuple_list[i+1][0] - tuple_list[i][0]))
                 self.autocompleter.insert(m, 1, interval_sequence)
 
 
@@ -311,37 +317,36 @@ def sample_letter_autocomplete() -> List[Tuple[str, float]]:
     """A sample run of the letter autocomplete engine."""
     engine = LetterAutocompleteEngine({
         # NOTE: you should also try 'data/google_no_swears.txt' for the file.
-        # 'file': 'data/google_no_swears.txt',
-        'file': 'test.txt',
+        'file': 'data/google_no_swears.txt',
+        # 'file': 'test.txt',
         'autocompleter': 'simple',
         'weight_type': 'sum'
     })
-    engine.remove("how")
-    return engine.autocomplete('', 20)
+    return engine.autocomplete('fa', 20)
 
 
 def sample_sentence_autocomplete() -> List[Tuple[str, float]]:
     """A sample run of the sentence autocomplete engine."""
     engine = SentenceAutocompleteEngine({
         # 'file': 'data/random_melodies_c_scale.csv',
-        'file': 'data/songbook.csv',
+        'file': 'data/google_searches.csv',
         'autocompleter': 'simple',
         'weight_type': 'sum'
     })
     # engine.remove('what')
-    return engine.autocomplete("how to", 20)
+    return engine.autocomplete("how to", 5)
 
 
 def sample_melody_autocomplete() -> None:
     """A sample run of the melody autocomplete engine."""
     engine = MelodyAutocompleteEngine({
-        # 'file': 'data/random_melodies_c_scale.csv',
-        'file': 'data/songbook.csv',
+        'file': 'data/random_melodies_c_scale.csv',
+        # 'file': 'data/songbook.csv',
         'autocompleter': 'simple',
         'weight_type': 'sum'
     })
-    engine.remove([])
-    melodies = engine.autocomplete([])
+
+    melodies = engine.autocomplete([1])
     for melody, _ in melodies:
         melody.play()
 
@@ -356,7 +361,7 @@ if __name__ == '__main__':
     # This is used to increase the recursion limit so that your sample runs
     # work even for fairly tall simple prefix trees.
     import sys
-    import os
+
 
     sys.setrecursionlimit(5000)
 

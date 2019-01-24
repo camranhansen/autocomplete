@@ -189,22 +189,24 @@ class SimplePrefixTree(Autocompleter):
         dup = self.insert_helper(value, weight, prefix)
         self.update_weights(prefix, weight, dup)
 
-        # for i in range(len(prefix)):
-        #     self.auto_move(prefix[0:(len(prefix) - i)], 1, "rejig")
-        # self.rejig_helper()
-        # self.update_weights(prefix)
-
-    def update_weights(self, prefix: List, weight: float, dup: bool):
+    def update_weights(self, prefix: List, weight: float, dup: bool) -> None:
+        """
+        Update weights of relevant tree values after inserting,
+        Keeping in mind the case when you add a value
+        but the length of the tree does not increase
+        """
         if self.weight_type == "sum":
             self.weight += weight
         else:
             if dup is True:
-                self.weight = ((self.weight*self.__len__()) + weight)/self.__len__()
+                self.weight = ((self.weight*self.__len__()) + weight)\
+                              /self.__len__()
             else:
                 if self.weight == 0:
                     self.weight = weight/self.__len__()
                 else:
-                    self.weight = ((self.weight*(self.__len__()-1)) + weight)/(self.__len__())
+                    self.weight = ((self.weight*(self.__len__()-1)) + weight)\
+                                  /(self.__len__())
         for subtree in self.subtrees:
             relevant = prefix[0:len(self.value)+1]
             if subtree.value == relevant:
@@ -242,6 +244,7 @@ class SimplePrefixTree(Autocompleter):
                 self.subtrees.append(new_tree)
                 new_tree.insert_helper(value, weight, prefix)
             return False
+        return False
 
     def handle_sorting(self) -> None:
         """
@@ -281,6 +284,7 @@ class SimplePrefixTree(Autocompleter):
                 if subtree.value == prefix[0:pos]:
                     return subtree.auto_move(prefix, pos+1, move_type, limit)
             return []
+        return []
 
     def getvalues(self, limit: Optional[int] = None) -> List[Tuple[Any, float]]:
         """Get values < limit if it exists, else get everything"""
@@ -319,7 +323,11 @@ class SimplePrefixTree(Autocompleter):
             self.n_helper(prefix)
             self.weight_helper(prefix)
 
-    def remove_helper(self, prefix, pos) -> None:
+    def remove_helper(self, prefix: List, pos: int) -> None:
+        """
+        Go to relevant location, and set the node to
+        an tree
+        """
         if pos == len(prefix) + 1:
             self.subtrees = []
             self.weight = 0
@@ -330,14 +338,20 @@ class SimplePrefixTree(Autocompleter):
                     self.subtrees[i].remove_helper(prefix, pos+1)
             self.handle_sorting()
 
-    def n_helper(self, prefix):
+    def n_helper(self, prefix: List) -> None:
+        """
+        Eliminate unecessary nodes after deletion
+        """
         for subtree in self.subtrees:
             if subtree.__len__() == 0:
                 self.subtrees.remove(subtree)
             elif subtree.value == prefix[0:len(self.value)+1]:
                 subtree.n_helper(prefix)
 
-    def weight_helper(self, prefix) -> None:
+    def weight_helper(self, prefix: List) -> None:
+        """
+        Update weights after deletion from scratch
+        """
         self.weight = 0
         if self.weight_type == "sum":
             for subtree in self.subtrees:
@@ -364,14 +378,10 @@ class SimplePrefixTree(Autocompleter):
 
 
 
-
-
-
-
 ################################################################################
 # CompressedPrefixTree (Task 6)
 ################################################################################
-class CompressedPrefixTree(Autocompleter):
+class CompressedPrefixTree(SimplePrefixTree):
     """A compressed prefix tree implementation.
 
     While this class has the same public interface as SimplePrefixTree,
@@ -419,11 +429,21 @@ class CompressedPrefixTree(Autocompleter):
     weight: float
     subtrees: List[CompressedPrefixTree]
 
+    def __init__(self, weight_type: str) -> None:
+        """Initialize an empty simple prefix tree.
 
-# if __name__ == '__main__':
-#     import python_ta
-#     python_ta.check_all(config={
-#         'max-nested-blocks': 4
-#     })
-#     import doctest
-#     doctest.testmod()
+        Precondition: weight_type == 'sum' or weight_type == 'average'.
+
+        The given <weight_type> value specifies how the aggregate weight
+        of non-leaf trees should be calculated (see the assignment handout
+        for details).
+        """
+
+        SimplePrefixTree.__init__(self, weight_type)
+
+if __name__ == '__main__':
+
+    import python_ta
+    python_ta.check_all(config={
+        'max-nested-blocks': 4
+    })
